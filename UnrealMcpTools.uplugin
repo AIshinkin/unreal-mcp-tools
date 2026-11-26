@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Unreal MCP Tools",
+	"Description": "Editor toolsets exposed to AI agents through the ToolsetRegistry / unreal-mcp server (terrain and more).",
+	"Category": "Editor",
+	"CreatedBy": "AIshinkin",
+	"EditorOnly": true,
+	"EnabledByDefault": true,
+	"CanContainContent": false,
+	"IsExperimentalVersion": true,
+	"Modules": [
+		{
+			"Name": "TerrainToolset",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"TargetAllowList": [ "Editor" ]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ToolsetRegistry",
+			"Enabled": true
+		}
+	]
+}
