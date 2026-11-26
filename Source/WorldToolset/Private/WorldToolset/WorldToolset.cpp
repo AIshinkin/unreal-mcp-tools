@@ -5,7 +5,9 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "LevelEditorSubsystem.h"
 #include "Misc/PackageName.h"
+#include "WorldPartition/LoaderAdapter/LoaderAdapterShape.h"
 #include "WorldPartition/WorldPartition.h"
+#include "WorldPartition/WorldPartitionEditorLoaderAdapter.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(WorldToolset)
 
@@ -44,6 +46,27 @@ void UWorldToolset::CreateLevel(const FString& LevelPath, bool bWorldPartition)
 	{
 		UKismetSystemLibrary::RaiseScriptError(FString::Printf(TEXT("Failed to create level '%s'. See the output log."), *LevelPath));
 	}
+}
+
+void UWorldToolset::LoadRegion(const FVector& Min, const FVector& Max)
+{
+	UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+	UWorldPartition* WorldPartition = World ? World->GetWorldPartition() : nullptr;
+	if (!WorldPartition)
+	{
+		UKismetSystemLibrary::RaiseScriptError(TEXT("The open level is not a World Partition level."));
+		return;
+	}
+	const FBox Box(Min.ComponentMin(Max), Min.ComponentMax(Max));
+	if (Box.GetVolume() <= 0.0)
+	{
+		UKismetSystemLibrary::RaiseScriptError(TEXT("The region must have a non-zero size on every axis."));
+		return;
+	}
+
+	UWorldPartitionEditorLoaderAdapter* Adapter = WorldPartition->CreateEditorLoaderAdapter<FLoaderAdapterShape>(World, Box, TEXT("Loaded Region"));
+	Adapter->GetLoaderAdapter()->SetUserCreated(true);
+	Adapter->GetLoaderAdapter()->Load();
 }
 
 bool UWorldToolset::IsWorldPartitioned()

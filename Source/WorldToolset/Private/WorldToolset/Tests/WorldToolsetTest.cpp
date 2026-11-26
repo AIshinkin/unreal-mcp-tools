@@ -96,6 +96,21 @@ void FWorldToolsetSpec::Define()
 		});
 	});
 
+	Describe("LoadRegion", [this]()
+	{
+		It("raises outside World Partition levels", [this]()
+		{
+			if (GEditor->GetEditorWorldContext().World()->IsPartitionedWorld())
+			{
+				AddInfo(TEXT("Skipped: the open level is partitioned."));
+				return;
+			}
+			ExpectError(TEXT("not a World Partition level"));
+			ExceptionHandler->CaptureErrorsIn([&]() { UWorldToolset::LoadRegion(FVector(-100.0), FVector(100.0)); });
+			ExpectExceptionContains(TEXT("not a World Partition level"));
+		});
+	});
+
 	Describe("IsWorldPartitioned", [this]()
 	{
 		It("matches the open world", [this]()

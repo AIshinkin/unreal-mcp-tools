@@ -28,4 +28,14 @@ public:
 	/** Returns whether the currently open level uses World Partition. */
 	UFUNCTION(meta = (AICallable), Category = "World")
 	static bool IsWorldPartitioned();
+
+	/**
+	 * Loads the actors of a World Partition level inside a box in the editor, like
+	 * "Load Region From Selection". The editor remembers loaded regions between sessions.
+	 * Raises if the open level is not partitioned.
+	 * @param Min World-space minimum corner, in cm.
+	 * @param Max World-space maximum corner, in cm.
+	 */
+	UFUNCTION(meta = (AICallable), Category = "World")
+	static void LoadRegion(const FVector& Min, const FVector& Max);
 };
