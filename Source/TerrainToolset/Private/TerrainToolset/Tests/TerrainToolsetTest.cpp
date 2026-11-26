@@ -1,4 +1,4 @@
-﻿#include "TerrainToolset/TerrainToolset.h"
+#include "TerrainToolset/TerrainToolset.h"
 
 #include "Editor.h"
 #include "Engine/World.h"
@@ -70,6 +70,12 @@ BEGIN_DEFINE_SPEC(FTerrainToolsetSpec, "AI.Toolsets.UnrealMcpTools.TerrainToolse
 	{
 		TestEqual(TEXT("Error"), ExceptionHandler->GetException(), FString());
 		ExceptionHandler = MakeUnique<UE::ToolsetRegistry::FToolCallExceptionHandler>();
+	}
+
+	// Marks the script error a negative test triggers as expected, so it isn't reported as a warning.
+	void ExpectError(const FString& Message)
+	{
+		AddExpectedMessage(Message, ELogVerbosity::Warning, EAutomationExpectedMessageFlags::Contains, 1, /*IsRegex=*/false);
 	}
 
 	void ExpectExceptionContains(const FString& Message)
@@ -177,6 +183,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on invalid QuadsPerSection", [this]()
 		{
+			ExpectError(TEXT("QuadsPerSection"));
 			FTerrainCreateSettings Settings = MakeSmallSettings();
 			Settings.QuadsPerSection = 10;
 			TestNull(TEXT("Landscape"), Create(Settings));
@@ -185,6 +192,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on invalid SectionsPerComponent", [this]()
 		{
+			ExpectError(TEXT("SectionsPerComponent"));
 			FTerrainCreateSettings Settings = MakeSmallSettings();
 			Settings.SectionsPerComponent = 3;
 			TestNull(TEXT("Landscape"), Create(Settings));
@@ -193,6 +201,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on non-positive scale", [this]()
 		{
+			ExpectError(TEXT("must be positive"));
 			FTerrainCreateSettings Settings = MakeSmallSettings();
 			Settings.MetersPerVertex = 0.0f;
 			TestNull(TEXT("Landscape"), Create(Settings));
@@ -201,6 +210,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises when the heightmap resolution does not match", [this]()
 		{
+			ExpectError(TEXT("expected 16x16"));
 			const FString Path = TempDir / TEXT("gradient.r16");
 			WriteGradientR16(Path);
 			FTerrainCreateSettings Settings = MakeSmallSettings();
@@ -231,6 +241,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on an unknown edit layer", [this]()
 		{
+			ExpectError(TEXT("Edit layer 'Missing' does not exist"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			const FString Path = TempDir / TEXT("gradient.r16");
 			WriteGradientR16(Path);
@@ -240,6 +251,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on a missing file", [this]()
 		{
+			ExpectError(TEXT("File not found"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::ImportHeightmap(Landscape, TempDir / TEXT("none.r16"), TEXT("Base")); });
 			ExpectExceptionContains(TEXT("File not found"));
@@ -247,6 +259,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on an unsupported export format", [this]()
 		{
+			ExpectError(TEXT("Cannot export heightmaps"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::ExportHeightmap(Landscape, TempDir / TEXT("out.txt"), FString()); });
 			ExpectExceptionContains(TEXT("Cannot export heightmaps"));
@@ -254,6 +267,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on a null landscape", [this]()
 		{
+			ExpectError(TEXT("must not be null"));
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::ExportHeightmap(nullptr, TempDir / TEXT("out.r16"), FString()); });
 			ExpectExceptionContains(TEXT("must not be null"));
 		});
@@ -284,6 +298,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on a duplicate name", [this]()
 		{
+			ExpectError(TEXT("already exists"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::AddEditLayer(Landscape, TEXT("Base")); });
 			ExpectExceptionContains(TEXT("already exists"));
@@ -291,6 +306,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on an empty name", [this]()
 		{
+			ExpectError(TEXT("must not be empty"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::AddEditLayer(Landscape, FString()); });
 			ExpectExceptionContains(TEXT("must not be empty"));
@@ -298,6 +314,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises when removing an unknown layer", [this]()
 		{
+			ExpectError(TEXT("does not exist"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::RemoveEditLayer(Landscape, TEXT("Missing")); });
 			ExpectExceptionContains(TEXT("does not exist"));
@@ -305,6 +322,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises when removing the last layer", [this]()
 		{
+			ExpectError(TEXT("last edit layer"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::RemoveEditLayer(Landscape, TEXT("Base")); });
 			ExpectExceptionContains(TEXT("last edit layer"));
@@ -339,6 +357,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on a duplicate paint layer", [this]()
 		{
+			ExpectError(TEXT("already exists"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			const FString Folder = TEXT("/Game/Developers/TerrainToolsetTests");
 			const FString LayerName = FString::Printf(TEXT("Dup%s"), *FGuid::NewGuid().ToString(EGuidFormats::Digits).Left(8));
@@ -350,6 +369,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises on a non-content asset folder", [this]()
 		{
+			ExpectError(TEXT("content path"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::AddPaintLayer(Landscape, TEXT("Grass"), TEXT("C:/Temp")); });
 			ExpectExceptionContains(TEXT("content path"));
@@ -357,6 +377,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises when importing into an unknown paint layer", [this]()
 		{
+			ExpectError(TEXT("Paint layer 'Missing'"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::ImportWeightmap(Landscape, TEXT("Missing"), TempDir / TEXT("w.r8"), TEXT("Base")); });
 			ExpectExceptionContains(TEXT("Paint layer 'Missing'"));
@@ -380,6 +401,7 @@ void FTerrainToolsetSpec::Define()
 
 		It("raises for a point outside the landscape", [this]()
 		{
+			ExpectError(TEXT("outside the loaded landscape"));
 			ALandscape* Landscape = Create(MakeSmallSettings());
 			ExceptionHandler->CaptureErrorsIn([&]() { UTerrainToolset::SampleHeights(Landscape, { FVector2D(100000.0, 0.0) }); });
 			ExpectExceptionContains(TEXT("outside the loaded landscape"));

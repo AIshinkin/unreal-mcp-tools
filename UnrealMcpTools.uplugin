@@ -16,11 +16,21 @@
 			"Type": "Editor",
 			"LoadingPhase": "PostEngineInit",
 			"TargetAllowList": [ "Editor" ]
+		},
+		{
+			"Name": "WorldToolset",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"TargetAllowList": [ "Editor" ]
 		}
 	],
 	"Plugins": [
 		{
 			"Name": "ToolsetRegistry",
+			"Enabled": true
+		},
+		{
+			"Name": "EditorScriptingUtilities",
 			"Enabled": true
 		}
 	]

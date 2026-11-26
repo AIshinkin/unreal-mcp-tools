@@ -7,6 +7,13 @@ inside this one plugin.
 | Module | Toolset | What it covers |
 |---|---|---|
 | `TerrainToolset` | `UTerrainToolset` | Landscape creation (World Partition aware), heightmap/weightmap import & export per edit layer, edit/paint layers, height sampling |
+| `WorldToolset` | `UWorldToolset` | Creating levels (incl. World Partition), querying whether the open level is partitioned |
+
+Outside the editor:
+
+| Tool | What it does |
+|---|---|
+| `Tools/heightgen` | Spec-driven heightmap generator (JSON → `.r16` + hillshade preview + slope report) |
 
 ## Install into a project
 
@@ -41,8 +48,23 @@ Tools (`call_tool` with `toolset_name` = the registered `TerrainToolset` name):
 Height mapping: heightmap value `32768` = landscape zero level (`Settings.Center.Z`);
 full 16-bit range spans `HeightRangeMeters` (`ZScale = HeightRangeMeters * 100 / 512`).
 
+## heightgen
+
+```powershell
+python -m venv Tools/heightgen/.venv
+Tools/heightgen/.venv/Scripts/python -m pip install numpy
+Tools/heightgen/.venv/Scripts/python -I Tools/heightgen/heightgen.py <Terrain>/World.spec.json
+```
+
+The spec describes resolution, height range, noise layers, distance-based roughness rings and
+features (`hill`, `flatten`, `calm`, `water`, `boundary`) in Unreal world meters (+X right, +Y down
+in the top view). Outputs `<name>.r16`, `<name>_preview.png`, `<name>_report.json`.
+
+Never name a spec `<name>.json` next to `<name>.r16`: Unreal reads that file as raw-heightmap
+metadata (`width`/`height`/`bpp`) and rejects the import.
+
 ### Tests
 
-Automation spec `AI.Toolsets.UnrealMcpTools.TerrainToolset`. Run over MCP with
+Automation specs under `AI.Toolsets.UnrealMcpTools` (Terrain and World). Run over MCP with
 `AutomationTestToolset` (`DiscoverTests` → `RunTests`) in a sandbox level: the tests create and
 destroy temporary landscapes in the currently open level.
