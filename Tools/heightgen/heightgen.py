@@ -147,12 +147,23 @@ def generate(spec: dict) -> tuple[np.ndarray, dict]:
         elif kind == "boundary":
             jitter = fbm(H.shape, f.get("jitter_scale", 120), 3, 0.5, rng, mpp) * f.get("jitter", 25)
             rr = R + jitter
-            wall = smoothstep(f["radius"], f["radius"] + f["width"], rr)
             cliff_noise = fbm(H.shape, 40, 4, 0.55, rng, mpp) * f.get("roughness", 8)
-            wall_h = (f["height"] + cliff_noise) * wall
+            # Exclusions either remove the wall ("radius" absent) or push it outward to their
+            # own "radius", blended smoothly so the wall bends around instead of being cut.
+            radius = np.full_like(H, float(f["radius"]))
             exclude = np.zeros_like(H)
             for ex in f.get("exclude", []):
-                exclude = np.maximum(exclude, region_mask(X, Y, ex))
+                m = region_mask(X, Y, ex)
+                if "radius" in ex:
+                    radius = radius + (ex["radius"] - radius) * m
+                else:
+                    exclude = np.maximum(exclude, m)
+            wall = smoothstep(radius, radius + f["width"], rr)
+            peaks = 0.0
+            if f.get("peaks"):
+                ridged = 1.0 - np.abs(fbm(H.shape, f.get("peaks_scale", 160), 4, 0.5, rng, mpp))
+                peaks = (ridged ** 2) * f["peaks"]
+            wall_h = (f["height"] + cliff_noise + peaks) * wall
             H += wall_h * (1 - exclude)
         else:
             raise ValueError(f"Unknown feature type '{kind}'")
@@ -160,11 +171,12 @@ def generate(spec: dict) -> tuple[np.ndarray, dict]:
     erosion = spec.get("erosion")
     if erosion:
         H = thermal_erosion(H, mpp, erosion.get("talus_deg", 38), erosion.get("iterations", 30))
-        # Re-assert water surfaces after erosion so lake beds stay flat-bottomed.
+        # Re-flatten lake beds that erosion raised slightly, but keep terrain that rises
+        # out of the water on purpose (e.g. a boundary wall behind the lake).
         for f in spec.get("features", []):
             if f["type"] == "water":
                 m = region_mask(X, Y, f)
-                H = np.where(m > 0.98, np.minimum(H, f["depth"]), H)
+                H = np.where((m > 0.98) & (H < f["depth"] + 2.0), np.minimum(H, f["depth"]), H)
 
     return H, {"X": X, "Y": Y, "R": R}
 
