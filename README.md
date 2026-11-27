@@ -7,7 +7,8 @@ inside this one plugin.
 | Module | Toolset | What it covers |
 |---|---|---|
 | `TerrainToolset` | `UTerrainToolset` | Landscape creation (World Partition aware), heightmap/weightmap import & export per edit layer, edit/paint layers, height sampling |
-| `WorldToolset` | `UWorldToolset` | Creating levels (incl. World Partition), querying whether the open level is partitioned |
+| `WorldToolset` | `UWorldToolset` | Creating levels (incl. World Partition), loading World Partition regions in the editor |
+| `PerfToolset` | `UPerfToolset` | Frame timing over a window (avg/p95 frame, game/render/RHI/GPU), console commands for A/B comparisons |
 
 Outside the editor:
 
@@ -47,6 +48,14 @@ Tools (`call_tool` with `toolset_name` = the registered `TerrainToolset` name):
 
 Height mapping: heightmap value `32768` = landscape zero level (`Settings.Center.Z`);
 full 16-bit range spans `HeightRangeMeters` (`ZScale = HeightRangeMeters * 100 / 512`).
+
+## Perf toolset
+
+- `MeasureFrames(DurationSeconds, WarmupSeconds)` is async: it samples every frame and completes with
+  average / p95 frame time, average game, render, RHI and GPU times and the bottleneck.
+- `RunConsoleCommand(Command)` runs in the PIE world if one is running, else the editor world.
+- Turn off **Editor Preferences → Performance → Use Less CPU when in Background** while measuring,
+  otherwise the editor throttles itself when it isn't the foreground window.
 
 ## heightgen
 
