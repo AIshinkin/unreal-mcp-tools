@@ -9,6 +9,7 @@ inside this one plugin.
 | `TerrainToolset` | `UTerrainToolset` | Landscape creation (World Partition aware), heightmap/weightmap import & export per edit layer, edit/paint layers, height sampling |
 | `WorldToolset` | `UWorldToolset` | Creating levels (incl. World Partition), loading World Partition regions in the editor |
 | `PerfToolset` | `UPerfToolset` | Frame timing over a window (avg/p95 frame, game/render/RHI/GPU), console commands for A/B comparisons |
+| `ContentToolset` | `UContentToolset` | Content organization: finding and fixing up redirectors without the editor's modal report |
 
 Outside the editor:
 
@@ -56,6 +57,21 @@ full 16-bit range spans `HeightRangeMeters` (`ZScale = HeightRangeMeters * 100 /
 - `RunConsoleCommand(Command)` runs in the PIE world if one is running, else the editor world.
 - Turn off **Editor Preferences → Performance → Use Less CPU when in Background** while measuring,
   otherwise the editor throttles itself when it isn't the foreground window.
+
+## Content toolset
+
+- `FindRedirectors(FolderPath)` – redirector packages under a folder (recursive).
+- `FixupRedirectors(FolderPath)` – resaves everything that references those redirectors (World Partition
+  external actors included), then deletes the redirectors nothing references. Returns the ones left.
+  `IAssetTools::FixupReferencers` always opens a modal "Redirector Update Report" in 5.8, which blocks
+  an agent, so this tool does the same work without it.
+
+Gotchas found while reorganizing content over MCP:
+- `AssetTools.move` fails silently (returns false) when a config CDO references the asset, e.g.
+  `GlobalDefaultGameMode` or per-user editor state such as recent maps and viewport bookmarks: the
+  engine asks "Source code, config INI ... Continue with rename?" and the unattended answer is Cancel.
+  Point the config at the new path first.
+- Moving a World Partition map moves only its always-loaded actors. Don't move WP maps this way.
 
 ## heightgen
 

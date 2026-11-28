@@ -28,6 +28,12 @@
 			"Type": "Editor",
 			"LoadingPhase": "PostEngineInit",
 			"TargetAllowList": [ "Editor" ]
+		},
+		{
+			"Name": "ContentToolset",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"TargetAllowList": [ "Editor" ]
 		}
 	],
 	"Plugins": [
